@@ -177,3 +177,50 @@ InfoBoxContentHorizon::Update(InfoBoxData &data)
 
   data.SetCustom();
 }
+
+/*
+ * update info box for XCTracer
+ * is this the right place for the code, or should it be moved to a separate file ?
+ */
+#include "Device/Driver/XCTracer/XCTracerStatus.hpp"
+#include "OS/Clock.hpp"
+
+void
+UpdateInfoBoxXCTracer(InfoBoxData &data)
+{
+  struct XCTracerVario::XCTStatus status;
+  enum State { Disconnected, Protocol, Battery };
+  static State state = Disconnected;
+  static unsigned time;
+
+  if (!XCTracerVario::getStatus(status)) {
+    data.SetInvalid();
+    state = Disconnected;
+    return;
+  }
+
+  if (!status.ok) {
+    data.SetValue(_T("N/C"));
+    state = Disconnected;
+    return;
+  }
+
+  /* we have a status and are OK */
+  switch (state) {
+  case Disconnected:
+    state = Protocol;
+    time = MonotonicClockMS();
+    /* fall through .. */
+  case Protocol:
+    data.SetValue(status.protocol); /* is _T already .. */
+    if (status.battery_valid && (MonotonicClockMS() - time >= 10000))
+      state = Battery;
+    break;
+  case Battery:
+    if (status.battery_valid && (status.battery <= 100))
+      data.UnsafeFormatValue(_T("%d%%"), status.battery);
+    else
+      data.SetInvalid();
+    break;
+  }
+}
