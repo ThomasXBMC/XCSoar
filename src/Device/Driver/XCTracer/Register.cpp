@@ -21,37 +21,18 @@ Copyright_License {
 }
 */
 
-#ifndef XCSOAR_INFOBOX_CONTENT_OTHER_HPP
-#define XCSOAR_INFOBOX_CONTENT_OTHER_HPP
+#include "../XCTracer/Internal.hpp"
+#include "Device/Driver/XCTracer.hpp"
 
-#include "InfoBoxes/Content/Base.hpp"
-
-void
-UpdateInfoBoxGLoad(InfoBoxData &data);
-
-void
-UpdateInfoBoxBattery(InfoBoxData &data);
-
-void
-UpdateInfoBoxExperimental1(InfoBoxData &data);
-
-void
-UpdateInfoBoxExperimental2(InfoBoxData &data);
-
-void
-UpdateInfoBoxCPULoad(InfoBoxData &data);
-
-void
-UpdateInfoBoxFreeRAM(InfoBoxData &data);
-
-class InfoBoxContentHorizon : public InfoBoxContent
+static Device *
+XCTracerCreateOnPort(const DeviceConfig &config, Port &com_port)
 {
-public:
-  virtual void Update(InfoBoxData &data) override;
-  virtual void OnCustomPaint(Canvas &canvas, const PixelRect &rc) override;
+  return new XCTracerDevice() ;
+}
+
+const struct DeviceRegister xctracer_driver = {
+  _T("XC-Tracer"),
+  _T("XC-Tracer Vario"),
+  0,
+  XCTracerCreateOnPort,
 };
-
-void
-UpdateInfoBoxXCTracer(InfoBoxData &data);
-
-#endif

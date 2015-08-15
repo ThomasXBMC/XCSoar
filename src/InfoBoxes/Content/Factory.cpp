@@ -1290,6 +1290,18 @@ static constexpr MetaData meta_data[] = {
     NEXT_ARROW,
     NEXT_ARROW,
   },
+
+  // XCTracer
+  {
+    N_("XC Tracer"),
+    N_("XC Tracer"),
+    N_("XC Tracer vario connection status, protocol in use, and battery level. "
+        "N/C: no connection; XCTRC: protocol is XCTRC; LXWP0: protocol is LXWP0. "
+        "45%: battery level."),
+    UpdateInfoBoxXCTracer,
+    e_XCTracer,
+    e_XCTracer,
+  },
 };
 
 static_assert(ARRAY_SIZE(meta_data) == NUM_TYPES,
