@@ -21,37 +21,29 @@ Copyright_License {
 }
 */
 
-#ifndef XCSOAR_INFOBOX_CONTENT_OTHER_HPP
-#define XCSOAR_INFOBOX_CONTENT_OTHER_HPP
+#ifndef XCSOAR_XCTRACERVARIO_STATUS_HPP
+#define XCSOAR_XCTRACERVARIO_STATUS_HPP
 
-#include "InfoBoxes/Content/Base.hpp"
+/*
+ * separate namespace for these "global" data types and functions
+ * status is available w/o knowing the instance or type of the driver class
+ * similar to ioctl ...
+ */
+namespace XCTracerVario {
 
-void
-UpdateInfoBoxGLoad(InfoBoxData &data);
+  /* status structure */
+  struct XCTStatus {
+    bool ok;           /* overall status: device ok */
+    unsigned battery;  /* battery level: 0 .. 100 percent */
+    bool battery_valid;
+    unsigned mps;
+    unsigned errors;   /* number of errors in sentences */
 
-void
-UpdateInfoBoxBattery(InfoBoxData &data);
+    const TCHAR *protocol; /* the protocol in use */
+  };
 
-void
-UpdateInfoBoxExperimental1(InfoBoxData &data);
-
-void
-UpdateInfoBoxExperimental2(InfoBoxData &data);
-
-void
-UpdateInfoBoxCPULoad(InfoBoxData &data);
-
-void
-UpdateInfoBoxFreeRAM(InfoBoxData &data);
-
-class InfoBoxContentHorizon : public InfoBoxContent
-{
-public:
-  virtual void Update(InfoBoxData &data) override;
-  virtual void OnCustomPaint(Canvas &canvas, const PixelRect &rc) override;
-};
-
-void
-UpdateInfoBoxXCTracer(InfoBoxData &data);
+  /* function to retrieve status */
+  extern bool getStatus(struct XCTStatus &status);
+}
 
 #endif

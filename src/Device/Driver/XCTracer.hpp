@@ -2,7 +2,7 @@
 Copyright_License {
 
   XCSoar Glide Computer - http://www.xcsoar.org/
-  Copyright (C) 2000-2015 The XCSoar Project
+  Copyright (C) 2000-2012 The XCSoar Project
   A detailed list of copyright holders can be found in the file "AUTHORS".
 
   This program is free software; you can redistribute it and/or
@@ -21,37 +21,9 @@ Copyright_License {
 }
 */
 
-#ifndef XCSOAR_INFOBOX_CONTENT_OTHER_HPP
-#define XCSOAR_INFOBOX_CONTENT_OTHER_HPP
+#ifndef XCSOAR_DEVICE_DRIVER_XCTRACER_HPP
+#define XCSOAR_DEVICE_DRIVER_XCTRACER_HPP
 
-#include "InfoBoxes/Content/Base.hpp"
-
-void
-UpdateInfoBoxGLoad(InfoBoxData &data);
-
-void
-UpdateInfoBoxBattery(InfoBoxData &data);
-
-void
-UpdateInfoBoxExperimental1(InfoBoxData &data);
-
-void
-UpdateInfoBoxExperimental2(InfoBoxData &data);
-
-void
-UpdateInfoBoxCPULoad(InfoBoxData &data);
-
-void
-UpdateInfoBoxFreeRAM(InfoBoxData &data);
-
-class InfoBoxContentHorizon : public InfoBoxContent
-{
-public:
-  virtual void Update(InfoBoxData &data) override;
-  virtual void OnCustomPaint(Canvas &canvas, const PixelRect &rc) override;
-};
-
-void
-UpdateInfoBoxXCTracer(InfoBoxData &data);
+extern const struct DeviceRegister xctracer_driver;
 
 #endif
