@@ -22,6 +22,7 @@ Copyright_License {
 */
 
 #include "../XCTracer/Internal.hpp"
+#include "Device/Parser.hpp"
 #include "NMEA/Checksum.hpp"
 #include "NMEA/InputLine.hpp"
 #include "NMEA/Info.hpp"
@@ -33,7 +34,11 @@ Copyright_License {
 #include "Util/Macros.hpp"
 #include "LogFile.hpp"
 
-/*
+/**
+ * Parser for the XCTracer Vario
+ * For the XCTracer Protocol
+ * @see https://www.xctracer.com/en/tech-specs/?oid=1861
+ *
  * Native XTRC sentences
  * $XCTRC,2015,1,5,16,34,33,36,46.947508,7.453117,540.32,12.35,270.4,2.78,,,,964.93,98*67
  *
@@ -46,7 +51,7 @@ Copyright_License {
  * $GPRMC,081158.800,A,4837.7018,N,00806.2923,E,2.34,261.89,110815,,,D*69
  */
 
-/*
+/**
  * the parser for the LXWP0 subset sentence that the XC-Tracer can produce
  */
 bool XCTracerDevice::LXWP0(NMEAInputLine &line, NMEAInfo &info,const char *log_string)
@@ -62,7 +67,7 @@ bool XCTracerDevice::LXWP0(NMEAInputLine &line, NMEAInfo &info,const char *log_s
    * 10 n.u
    * 11 n.u.
    */
-  int valid_fields = 0 ;
+  int valid_fields = 0;
 
   line.Skip(2);
 
@@ -71,129 +76,145 @@ bool XCTracerDevice::LXWP0(NMEAInputLine &line, NMEAInfo &info,const char *log_s
   if (line.ReadChecked(value)) {
     /* XC-Tracer sends uncorrected altitude above 1013.25hPa here */
     info.ProvidePressureAltitude(value);
-    valid_fields++ ;
+    valid_fields++;
   }
 
   /* read vario */
   if (line.ReadChecked(value)) {
     info.ProvideTotalEnergyVario(value);
-    valid_fields++ ;
+    valid_fields++;
   }
 
   line.Skip(5);
 
   /* read heading */
   if (line.ReadChecked(value)) {
-    (void) Angle::Degrees(value) ; /* XXX */
-    valid_fields++ ;
+    (void) Angle::Degrees(value); /* XXX */
+    valid_fields++;
   }
   if (valid_fields >= 3) {
-    last_LXWP0_sentence = MonotonicClockMS() ;
+    last_LXWP0_sentence = MonotonicClockMS();
   }
   else {
-    nmea_errors++ ;
-    //LogFormat("XCTracer: Parser error, input %s",log_string) ;
+    nmea_errors++;
+    //LogFormat("XCTracer: Parser error, input %s",log_string);
   }
 
   return true;
 }
 
-/*
+/**
  * the parser for the XCTRC sentence
  */
 bool XCTracerDevice::XCTRC(NMEAInputLine &line, NMEAInfo &info,const char *log_string)
 {
   /*
-   * $XCTRC,year,month,day,hour,minute,second,centisecond,latitude,longitude,altitude,speedoverground,
-   *       course,climbrate,res,res,res,rawpressure,batteryindication*checksum
-   *       $XCTRC,2015,8,11,10,56,23,80,48.62825,8.104885,129.4,0.01,322.76,-0.05,,,,997.79,77*66
+   * $XCTRC,year,month,day,hour,minute,second,centisecond,latitude,longitude,
+   *  altitude,speedoverground,course,climbrate,res,res,res,rawpressure,
+   *  batteryindication*checksum
+   * $XCTRC,2015,8,11,10,56,23,80,48.62825,8.104885,129.4,0.01,322.76,-0.05,,,,997.79,77*66
    */
 
-  int valid_fields = 0 ;
+  /* count the number of valid fields. If not as expected incr nmea error counter */
+  int valid_fields = 0;
+
+  /**
+   * we only want to accept GPS fixes with completely sane values
+   * for date, time and lat/long
+   */
+  bool date_valid = false;
+  bool time_valid = false;
 
   /* parse the date */
-  int  year,month,day,hour,minute,second,centisecond ;
-  bool year_valid = line.ReadChecked(year) ;
-  bool month_valid = line.ReadChecked(month) ;
-  bool day_valid = line.ReadChecked(day) ;
-  bool date_valid = false ;
-  bool time_valid = false ;
-  BrokenDate date ;
-  fixed time = fixed(0);
+  long year, month, day;     /* use signed type to catch invalid input */
+  BrokenDate date;
+
+  /* parse and absorb all three values, even if one or more is empty, e.g. ",,13" */
+  bool year_valid = line.ReadChecked(year);
+  bool month_valid = line.ReadChecked(month);
+  bool day_valid = line.ReadChecked(day);
 
   if (year_valid && month_valid && day_valid) {
-    date = BrokenDate(year,month,day) ;
+    date = BrokenDate(year,month,day);
     if (date.IsPlausible()) {
-      date_valid = true ;
-      valid_fields += 3 ;
+      date_valid = true;
+      valid_fields += 3;
     }
   }
 
   /* parse time */
-  bool hour_valid = line.ReadChecked(hour) ;
-  bool minute_valid = line.ReadChecked(minute) ;
-  bool second_valid = line.ReadChecked(second) ;
-  bool centisecond_valid = line.ReadChecked(centisecond) ;
+  long hour,minute,second,centisecond; /* use signed type to catch invalid input */
+  fixed time = fixed(0);
+
+  /* parse and check all four values, even if one or more is empty, e.g. ",,33," */
+  bool hour_valid = line.ReadChecked(hour) && hour >= 0 && hour < 24;
+  bool minute_valid = line.ReadChecked(minute) && minute >= 0 && minute < 60;
+  bool second_valid = line.ReadChecked(second) && second >= 0 && second < 60;
+  bool centisecond_valid = line.ReadChecked(centisecond) && centisecond >= 0;
 
   if (hour_valid && minute_valid && second_valid && centisecond_valid) {
-    if (hour >= 0 && hour < 24 && minute >= 0 && minute < 60 && second >= 0 && second < 60) {
-      time = fixed(hour*60*60 + minute*60 + second) ;
-      time_valid = true ;
-      valid_fields += 4 ;
-    }
+    time = fixed(hour*60*60 + minute*60 + second);
+    time_valid = true;
+    valid_fields += 4;
   }
 
   /* parse the GPS fix */
-  fixed latitude, longitude ;
-  bool lat_valid = line.ReadChecked(latitude) ;
-  bool long_valid = line.ReadChecked(longitude) ;
+  fixed latitude, longitude;
 
-  if (lat_valid && long_valid) {
-    if (latitude >= fixed(-90.0) && latitude <= fixed(90.0) &&
-        longitude >= fixed(-180.0) && longitude <= fixed(180.0)) {
-        GeoPoint point ;
-        point.latitude = Angle::Degrees(latitude) ;
-        point.longitude = Angle::Degrees(longitude) ;
+  /* parse and check both  values, even if one or more is empty, e.g. ",3.1234," */
+  bool latitude_valid = line.ReadChecked(latitude) &&
+      latitude >= fixed(-90.0) && latitude <= fixed(90.0);
+  bool longitude_valid = line.ReadChecked(longitude) &&
+      longitude >= fixed(-180.0) && longitude <= fixed(180.0);
 
-        valid_fields += 2 ;
+  if (latitude_valid && longitude_valid) {
+    GeoPoint point;
+    point.latitude = Angle::Degrees(latitude);
+    point.longitude = Angle::Degrees(longitude);
 
-        /*
-         * only update GPS and date/time once per second
-         */
-        if (date_valid && time_valid && (gps_last_second != second)) {
-          info.ProvideDate(date) ;
-          info.ProvideTime(time) ;
-          info.location = point ;
-          info.location_available.Update(info.clock);
-          info.gps.real = true;
-          gps_last_second = second ;
-        }
+    valid_fields += 2;
 
-#if 0
-        // fake # of satellites and fix quality
-        info.gps.fix_quality = FixQuality::DGPS;
-        info.gps.fix_quality_available.Update(info.clock);
-        info.gps.satellites_used = 5;
-        info.gps.satellites_used_available.Update(info.clock);
-#endif
+    /**
+     * only update GPS and date/time
+     * - if all time/date fields have sane values
+     * - if time has advanced
+     * update only once per second
+     * - for perfomance reasons
+     * - all info time fields have a resolution of one second only anyway
+     */
+
+    if (date_valid && time_valid && (time > last_time || date > last_date)) {
+      /* update last date/time */
+      last_time = time;
+      last_date = date;
+
+      /* set time and date_time_utc, don't use ProvideTime() */
+      info.time = time;
+      info.time_available.Update(info.clock);
+      info.date_time_utc.hour = hour;
+      info.date_time_utc.minute = minute;
+      info.date_time_utc.second = second;
+
+      info.ProvideDate(date);
+      info.location = point;
+      info.location_available.Update(info.clock);
+      info.gps.real = true;
     }
   }
 
   fixed value;
-  /* read baroaltitude */
+  /* read gps altitude */
   if (line.ReadChecked(value)) {
-    /* XC-Tracer sends uncorrected altitude above 1013.25hPa here */
-    // info.ProvidePressureAltitude(value);
-    info.gps_altitude = value ;
+    info.gps_altitude = value;
     info.gps_altitude_available.Update(info.clock);
-    valid_fields++ ;
+    valid_fields++;
   }
 
   /* read spead over ground */
   if (line.ReadChecked(value)) {
-    info.ground_speed = value ;
+    info.ground_speed = value;
     info.ground_speed_available.Update(info.clock);
-    valid_fields++ ;
+    valid_fields++;
   }
 
   /* read course*/
@@ -203,13 +224,13 @@ bool XCTracerDevice::XCTRC(NMEAInputLine &line, NMEAInfo &info,const char *log_s
       info.track = Angle::Degrees(value);
       info.track_available.Update(info.clock);
     }
-    valid_fields++ ;
+    valid_fields++;
   }
 
   /* read climbrate */
   if (line.ReadChecked(value)) {
     info.ProvideTotalEnergyVario(value);
-    valid_fields++ ;
+    valid_fields++;
   }
 
   /* skip 3 reserved values */
@@ -219,41 +240,41 @@ bool XCTracerDevice::XCTRC(NMEAInputLine &line, NMEAInfo &info,const char *log_s
   if (line.ReadChecked(value)) {
     // convert to pressure
     info.ProvideStaticPressure(AtmosphericPressure::HectoPascal(value));
-    valid_fields++ ;
+    valid_fields++;
   }
 
   /* read battery level */
   if (line.ReadChecked(value)) {
     if ((value >= fixed(0)) && (value <= fixed(100) )) {
-      info.battery_level = value ;
-      info.battery_level_available.Update(info.clock) ;
-      battery = unsigned(value) ;
-      valid_fields++ ;
+      info.battery_level = value;
+      info.battery_level_available.Update(info.clock);
+      battery = unsigned(value);
+      valid_fields++;
 
 #ifndef NDEBUG
-    static int logn = 0 ;
+    static int logn = 0;
     if (logn == 0) {
       //LogFormat("XCTracer: Battery level %u",unsigned(value));
     }
     if (logn++ > 5*60*10) /* every ten minutes */
-      logn = 0 ;
+      logn = 0;
 
 #endif
     }
   }
 
   if (valid_fields >= 15) {
-    last_XCTRC_sentence = MonotonicClockMS() ;
+    last_XCTRC_sentence = MonotonicClockMS();
   }
   else {
-    nmea_errors++ ;
-    //LogFormat("XCTracer: Parser error, input %s",log_string) ;
+    nmea_errors++;
+    //LogFormat("XCTracer: Parser error, input %s",log_string);
   }
 
   return true;
 }
 
-/*
+/**
  * the NMEA parser virtual function
  */
 bool
@@ -272,7 +293,7 @@ XCTracerDevice::ParseNMEA(const char *String, NMEAInfo &info)
    */
   if (StringIsEqual(type, "$GPRMC") || StringIsEqual(type, "$GPGGA")) {
     last_GPS_sentence = MonotonicClockMS();
-    return false ;
+    return false;
   }
 
   if (StringIsEqual(type, "$LXWP0"))

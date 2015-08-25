@@ -28,42 +28,67 @@ Copyright_License {
 #include "Device/Driver/XCTracer/XCTracerStatus.hpp"
 #include "NMEA/Info.hpp"
 #include "NMEA/InputLine.hpp"
+#include "Time/BrokenDate.hpp"
 
 #include <assert.h>
 
 class XCTracerDevice : public AbstractDevice {
-public:
-
-  void Parse(const char *name, unsigned long value);
 
 private:
-  /* time stamps */
-  unsigned last_XCTRC_sentence ;
-  unsigned last_LXWP0_sentence ;
-  unsigned last_GPS_sentence ;
+  /**
+   * time and date of last GPS fix
+   * used to check whether date/time has advanced
+   */
+  fixed last_time;
+  BrokenDate last_date;
 
-  /* error counter and stats */
-  unsigned nmea_errors ;
+  /**
+   * time stamps
+   * remember when we received the last sentence of a certain type
+   * types are XTRCR,LXWP,GPS
+   */
+  unsigned last_XCTRC_sentence;
+  unsigned last_LXWP0_sentence;
+  unsigned last_GPS_sentence;
 
-  unsigned battery ;
-  fixed mps ;
+  /**
+   * error counter and stats
+   */
+  unsigned nmea_errors;
 
-  int gps_last_second ;     /* last gps update time (second only) */
+  /**
+   * battery level
+   */
+  unsigned battery;
 
-  /* the first instance of the device class - used for getStatus only */
-  static XCTracerDevice *theDevice ;
+  /**
+   * last gps update time (second only)
+   */
+  int gps_last_second;
 
-  bool LXWP0(NMEAInputLine &line, NMEAInfo &info,const char *log_string) ;
-  bool XCTRC(NMEAInputLine &line, NMEAInfo &info,const char *log_string) ;
+  /* the first instance of the device class - used for GetStatus only */
+  static XCTracerDevice *the_device;
+
+  /**
+   * parser for the LXWP0 sentence
+   */
+  bool LXWP0(NMEAInputLine &line, NMEAInfo &info,const char *log_string);
+
+  /**
+   * parser for the XCTRC sentence
+   */
+  bool XCTRC(NMEAInputLine &line, NMEAInfo &info,const char *log_string);
 
 public:
-  XCTracerDevice() ;
+  XCTracerDevice();
   ~XCTracerDevice();
 
   /* non-object friend to allow access to device status */
-  friend bool  XCTracerVario::getStatus(struct XCTracerVario::XCTStatus &status) ;
+  friend bool  XCTracerVario::GetStatus(struct XCTracerVario::Status &status);
 
-  /* virtual methods from class Device */
+  /**
+   * virtual methods from class Device
+   */
   void LinkTimeout() override;
   bool ParseNMEA(const char *line, struct NMEAInfo &info) override;
 };

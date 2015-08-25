@@ -32,7 +32,7 @@ Copyright_License {
 namespace XCTracerVario {
 
   /* status structure */
-  struct XCTStatus {
+  struct Status {
     bool ok;           /* overall status: device ok */
     unsigned battery;  /* battery level: 0 .. 100 percent */
     bool battery_valid;
@@ -43,7 +43,7 @@ namespace XCTracerVario {
   };
 
   /* function to retrieve status */
-  extern bool getStatus(struct XCTStatus &status);
+  extern bool GetStatus(struct Status &status);
 }
 
 #endif

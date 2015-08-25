@@ -27,7 +27,7 @@ Copyright_License {
 #include "OS/Clock.hpp"
 
 /* static member definition */
-XCTracerDevice *XCTracerDevice::theDevice = 0;
+XCTracerDevice *XCTracerDevice::the_device = 0;
 
 XCTracerDevice::XCTracerDevice()
 {
@@ -35,12 +35,14 @@ XCTracerDevice::XCTracerDevice()
    * remember first (and only .. ) instance
    * used for status retrieval only
    */
-  if (!theDevice)
-    theDevice = this;
-  battery = 0;
-  mps = fixed(0);
+  if (!the_device)
+    the_device = this;
 
-  gps_last_second = -1 ;
+  battery = 0;
+
+  gps_last_second = -1;
+  last_time = fixed(0);
+  last_date = BrokenDate::Invalid();
 
   last_LXWP0_sentence = 0;
   last_XCTRC_sentence = 0;
@@ -50,7 +52,8 @@ XCTracerDevice::XCTracerDevice()
 
 XCTracerDevice::~XCTracerDevice()
 {
-  theDevice = 0;
+  if (this == the_device)
+    the_device = nullptr;
 }
 
 void
@@ -59,14 +62,20 @@ XCTracerDevice::LinkTimeout()
   /* nothing to do yet ... */
 }
 
-/*
+/**
  * return status values for the vario driver
+ * @param status The status structure
  */
-bool  XCTracerVario::getStatus(struct XCTracerVario::XCTStatus &status) {
+bool
+XCTracerVario::GetStatus(struct XCTracerVario::Status &status)
+{
   XCTracerDevice *device;
+  unsigned current_time;
+
+  // assert(InMainThread());
 
   /* are we instantiated ? */
-  if (!(device = XCTracerDevice::theDevice))
+  if (!(device = XCTracerDevice::the_device))
     return false;
 
   /* determine protocol in use */
@@ -74,20 +83,24 @@ bool  XCTracerVario::getStatus(struct XCTracerVario::XCTStatus &status) {
   status.ok = false;
   status.battery_valid = false;
 
-  /* check timestamps of sentences to determine protocol in use */
-  if ((MonotonicClockMS() - device->last_XCTRC_sentence) <= 3000 ) {
+  /*
+   * check timestamps of sentences to determine protocol in use
+   * and connection status
+   * if timestamp is too old (comms error) then we don't show any protocol
+   */
+  current_time = MonotonicClockMS();
+  if ((current_time - device->last_XCTRC_sentence) <= 3000 ) {
     status.protocol = _T("XCTRC");
     status.battery_valid = true;
     status.ok = true;
   }
-  else if ((MonotonicClockMS() - device->last_LXWP0_sentence) <= 3000 ) {
+  else if ((current_time - device->last_LXWP0_sentence) <= 3000 ) {
     status.protocol = _T("LXWP0");
     status.ok = true;
-    if ((MonotonicClockMS() - device->last_GPS_sentence) <= 5000 )
+    if ((current_time - device->last_GPS_sentence) <= 5000 )
         status.protocol = _T("LX&GPS");
   }
 
-  status.mps = MonotonicClockMS() - device->last_XCTRC_sentence;
   status.errors = device->nmea_errors;
   status.battery = device->battery;
   return true;

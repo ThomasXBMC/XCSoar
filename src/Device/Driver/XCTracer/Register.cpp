@@ -27,7 +27,7 @@ Copyright_License {
 static Device *
 XCTracerCreateOnPort(const DeviceConfig &config, Port &com_port)
 {
-  return new XCTracerDevice() ;
+  return new XCTracerDevice();
 }
 
 const struct DeviceRegister xctracer_driver = {

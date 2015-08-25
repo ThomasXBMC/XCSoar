@@ -179,12 +179,12 @@ InfoBoxContentHorizon::Update(InfoBoxData &data)
 void
 UpdateInfoBoxXCTracer(InfoBoxData &data)
 {
-  struct XCTracerVario::XCTStatus status;
+  struct XCTracerVario::Status status;
   enum State { Disconnected, Protocol, Battery };
   static State state = Disconnected;
   static unsigned time;
 
-  if (!XCTracerVario::getStatus(status)) {
+  if (!XCTracerVario::GetStatus(status)) {
     data.SetInvalid();
     state = Disconnected;
     return;

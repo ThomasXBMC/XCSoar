@@ -1441,6 +1441,9 @@ TestXCTracer()
   ok1(!nmea_info.total_energy_vario_available);
   ok1(!nmea_info.external_wind_available);
 
+  /* bad checksum */
+  ok1(!device->ParseNMEA("$XCTRC*6d", nmea_info));
+
   nmea_info.Reset();
   nmea_info.clock = fixed(1);
 
@@ -1490,19 +1493,19 @@ TestXCTracer()
   ok1(equals(nmea_info.location.latitude, 48.62825));
 
   ok1(nmea_info.gps_altitude_available);
-  ok1(nmea_info.gps_altitude == 129.4);
+  ok1(equals(nmea_info.gps_altitude, 129.4));
 
   ok1(nmea_info.ground_speed_available);
-  ok1(nmea_info.ground_speed == 11.01);
+  ok1(equals(nmea_info.ground_speed, 11.01));
 
   ok1(nmea_info.track_available);
-  ok1(nmea_info.track == Angle::Degrees(322.76));
+  ok1(equals(nmea_info.track,Angle::Degrees(322.76)));
 
   ok1(nmea_info.total_energy_vario_available);
-  ok1(nmea_info.total_energy_vario == -5.05);
+  ok1(equals(nmea_info.total_energy_vario, -5.05));
 
   ok1(nmea_info.battery_level_available);
-  ok1(nmea_info.battery_level == 77);
+  ok1(equals(nmea_info.battery_level,77));
 
   delete device;
 }
@@ -1577,7 +1580,7 @@ TestFlightList(const struct DeviceRegister &driver)
 
 int main(int argc, char **argv)
 {
-  plan_tests(827);
+  plan_tests(828);
 
   TestGeneric();
   TestTasman();
