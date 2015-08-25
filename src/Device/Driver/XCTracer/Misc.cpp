@@ -23,85 +23,15 @@ Copyright_License {
 
 #include "../XCTracer/Internal.hpp"
 #include "Device/Driver/XCTracer.hpp"
-#include "Device/Driver/XCTracer/XCTracerStatus.hpp"
-#include "OS/Clock.hpp"
 
-/* static member definition */
-XCTracerDevice *XCTracerDevice::the_device = 0;
 
 XCTracerDevice::XCTracerDevice()
 {
-  /*
-   * remember first (and only .. ) instance
-   * used for status retrieval only
-   */
-  if (!the_device)
-    the_device = this;
-
-  battery = 0;
-
-  gps_last_second = -1;
   last_time = fixed(0);
   last_date = BrokenDate::Invalid();
-
-  last_LXWP0_sentence = 0;
-  last_XCTRC_sentence = 0;
-  last_GPS_sentence = 0;
   nmea_errors = 0;
 }
 
 XCTracerDevice::~XCTracerDevice()
 {
-  if (this == the_device)
-    the_device = nullptr;
-}
-
-void
-XCTracerDevice::LinkTimeout()
-{
-  /* nothing to do yet ... */
-}
-
-/**
- * return status values for the vario driver
- * @param status The status structure
- */
-bool
-XCTracerVario::GetStatus(struct XCTracerVario::Status &status)
-{
-  XCTracerDevice *device;
-  unsigned current_time;
-
-  // assert(InMainThread());
-
-  /* are we instantiated ? */
-  if (!(device = XCTracerDevice::the_device))
-    return false;
-
-  /* determine protocol in use */
-  status.protocol = _T("N/A");
-  status.ok = false;
-  status.battery_valid = false;
-
-  /*
-   * check timestamps of sentences to determine protocol in use
-   * and connection status
-   * if timestamp is too old (comms error) then we don't show any protocol
-   */
-  current_time = MonotonicClockMS();
-  if ((current_time - device->last_XCTRC_sentence) <= 3000 ) {
-    status.protocol = _T("XCTRC");
-    status.battery_valid = true;
-    status.ok = true;
-  }
-  else if ((current_time - device->last_LXWP0_sentence) <= 3000 ) {
-    status.protocol = _T("LXWP0");
-    status.ok = true;
-    if ((current_time - device->last_GPS_sentence) <= 5000 )
-        status.protocol = _T("LX&GPS");
-  }
-
-  status.errors = device->nmea_errors;
-  status.battery = device->battery;
-  return true;
 }

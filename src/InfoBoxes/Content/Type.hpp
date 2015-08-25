@@ -157,8 +157,6 @@ namespace InfoBoxFactory
     /* 110..119 */
     NEXT_ARROW,
 
-    e_XCTracer,
-
     e_NUM_TYPES /* Last item */
   };
 

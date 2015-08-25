@@ -25,7 +25,6 @@ Copyright_License {
 #define XCSOAR_XCTRACERVARIO_INTERNAL_HPP
 
 #include "Device/Driver.hpp"
-#include "Device/Driver/XCTracer/XCTracerStatus.hpp"
 #include "NMEA/Info.hpp"
 #include "NMEA/InputLine.hpp"
 #include "Time/BrokenDate.hpp"
@@ -43,53 +42,27 @@ private:
   BrokenDate last_date;
 
   /**
-   * time stamps
-   * remember when we received the last sentence of a certain type
-   * types are XTRCR,LXWP,GPS
-   */
-  unsigned last_XCTRC_sentence;
-  unsigned last_LXWP0_sentence;
-  unsigned last_GPS_sentence;
-
-  /**
    * error counter and stats
    */
   unsigned nmea_errors;
 
   /**
-   * battery level
-   */
-  unsigned battery;
-
-  /**
-   * last gps update time (second only)
-   */
-  int gps_last_second;
-
-  /* the first instance of the device class - used for GetStatus only */
-  static XCTracerDevice *the_device;
-
-  /**
    * parser for the LXWP0 sentence
    */
-  bool LXWP0(NMEAInputLine &line, NMEAInfo &info,const char *log_string);
+  bool LXWP0(NMEAInputLine &line, NMEAInfo &info, const char *log_string);
 
   /**
    * parser for the XCTRC sentence
    */
-  bool XCTRC(NMEAInputLine &line, NMEAInfo &info,const char *log_string);
+  bool XCTRC(NMEAInputLine &line, NMEAInfo &info, const char *log_string);
 
 public:
   XCTracerDevice();
   ~XCTracerDevice();
 
-  /* non-object friend to allow access to device status */
-  friend bool  XCTracerVario::GetStatus(struct XCTracerVario::Status &status);
-
   /**
    * virtual methods from class Device
    */
-  void LinkTimeout() override;
   bool ParseNMEA(const char *line, struct NMEAInfo &info) override;
 };
 

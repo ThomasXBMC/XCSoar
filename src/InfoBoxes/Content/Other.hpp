@@ -51,7 +51,4 @@ public:
   virtual void OnCustomPaint(Canvas &canvas, const PixelRect &rc) override;
 };
 
-void
-UpdateInfoBoxXCTracer(InfoBoxData &data);
-
 #endif

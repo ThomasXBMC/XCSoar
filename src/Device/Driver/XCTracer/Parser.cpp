@@ -54,7 +54,7 @@ Copyright_License {
 /**
  * the parser for the LXWP0 subset sentence that the XC-Tracer can produce
  */
-bool XCTracerDevice::LXWP0(NMEAInputLine &line, NMEAInfo &info,const char *log_string)
+bool XCTracerDevice::LXWP0(NMEAInputLine &line, NMEAInfo &info, const char *log_string)
 {
   /*
    *  $LXWP0,N,,119.9,0.16,,,,,,259,,*64
@@ -89,15 +89,21 @@ bool XCTracerDevice::LXWP0(NMEAInputLine &line, NMEAInfo &info,const char *log_s
 
   /* read heading */
   if (line.ReadChecked(value)) {
-    (void) Angle::Degrees(value); /* XXX */
+    /* ignore course, we don't have speed over ground */
     valid_fields++;
   }
-  if (valid_fields >= 3) {
-    last_LXWP0_sentence = MonotonicClockMS();
-  }
-  else {
+
+  if (valid_fields < 3) {
     nmea_errors++;
-    //LogFormat("XCTracer: Parser error, input %s",log_string);
+#if 0
+    /*
+     * Would like to log the invalid input
+     * but LogFormat() is not available in TestDriver.cpp
+     * and when its added it "pollutes" the clean output of the tester
+     * Please advise ...
+     */
+    LogFormat("XCTRACER parser - invalid input: %s",log_string);
+#endif
   }
 
   return true;
@@ -106,7 +112,7 @@ bool XCTracerDevice::LXWP0(NMEAInputLine &line, NMEAInfo &info,const char *log_s
 /**
  * the parser for the XCTRC sentence
  */
-bool XCTracerDevice::XCTRC(NMEAInputLine &line, NMEAInfo &info,const char *log_string)
+bool XCTracerDevice::XCTRC(NMEAInputLine &line, NMEAInfo &info, const char *log_string)
 {
   /*
    * $XCTRC,year,month,day,hour,minute,second,centisecond,latitude,longitude,
@@ -248,27 +254,21 @@ bool XCTracerDevice::XCTRC(NMEAInputLine &line, NMEAInfo &info,const char *log_s
     if ((value >= fixed(0)) && (value <= fixed(100) )) {
       info.battery_level = value;
       info.battery_level_available.Update(info.clock);
-      battery = unsigned(value);
       valid_fields++;
-
-#ifndef NDEBUG
-    static int logn = 0;
-    if (logn == 0) {
-      //LogFormat("XCTracer: Battery level %u",unsigned(value));
-    }
-    if (logn++ > 5*60*10) /* every ten minutes */
-      logn = 0;
-
-#endif
     }
   }
 
-  if (valid_fields >= 15) {
-    last_XCTRC_sentence = MonotonicClockMS();
-  }
-  else {
+  if (valid_fields < 15) {
     nmea_errors++;
-    //LogFormat("XCTracer: Parser error, input %s",log_string);
+#if 0
+    /*
+     * Would like to log the invalid input
+     * but LogFormat() is not available in TestDriver.cpp
+     * and when its added it "pollutes" the clean output of the tester
+     * Please advise ...
+     */
+    LogFormat("XCTRACER parser - invalid input: %s",log_string);
+#endif
   }
 
   return true;
@@ -278,29 +278,20 @@ bool XCTracerDevice::XCTRC(NMEAInputLine &line, NMEAInfo &info,const char *log_s
  * the NMEA parser virtual function
  */
 bool
-XCTracerDevice::ParseNMEA(const char *String, NMEAInfo &info)
+XCTracerDevice::ParseNMEA(const char *string, NMEAInfo &info)
 {
-  if (!VerifyNMEAChecksum(String))
+  if (!VerifyNMEAChecksum(string))
     return false;
 
-  NMEAInputLine line(String);
+  NMEAInputLine line(string);
   char type[16];
   line.Read(type, 16);
 
-  /*
-   * GPS sentences are parsed by the default NMEA parser
-   * but we want to check their presence ..
-   */
-  if (StringIsEqual(type, "$GPRMC") || StringIsEqual(type, "$GPGGA")) {
-    last_GPS_sentence = MonotonicClockMS();
-    return false;
-  }
-
   if (StringIsEqual(type, "$LXWP0"))
-    return LXWP0(line, info,String);
+    return LXWP0(line, info, string);
 
   if (StringIsEqual(type, "$XCTRC"))
-    return XCTRC(line, info,String);
+    return XCTRC(line, info, string);
 
   return false;
 }
