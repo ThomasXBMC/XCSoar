@@ -1487,6 +1487,7 @@ TestXCTracer()
   ok1(nmea_info.date_time_utc.hour == 10);
   ok1(nmea_info.date_time_utc.minute == 56);
   ok1(nmea_info.date_time_utc.second == 23);
+  ok1(equals(nmea_info.time, 10 * 3600 + 56 * 60 + 23.80));
 
   ok1(nmea_info.location_available);
   ok1(equals(nmea_info.location.longitude, 8.104885));
@@ -1580,7 +1581,7 @@ TestFlightList(const struct DeviceRegister &driver)
 
 int main(int argc, char **argv)
 {
-  plan_tests(828);
+  plan_tests(829);
 
   TestGeneric();
   TestTasman();

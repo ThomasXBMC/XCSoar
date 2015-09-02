@@ -52,6 +52,49 @@ Copyright_License {
  */
 
 /**
+ * Helper functions to parse and check an input field
+ * Should these be added as methods to Class CSVLine ?
+ * e.g. bool CSVLine::ReadCheckedRange(unsigned &value_r, unsigned min, unsigned max)
+ *
+ * @param line Input line
+ * @param value_r Return parsed and checked value
+ * @param min Minimum value to be accepted
+ * @param max Maximum value to be accepted
+ * @return true if parsed OK and within range
+ */
+static bool
+ReadCheckedRange(NMEAInputLine &line, unsigned &value_r, unsigned min, unsigned max)
+{
+  fixed value;
+  if (!line.ReadChecked(value))
+    return false;
+
+  /* check min/max as floating point to catch input values out of unsigned range */
+  if (value < fixed(min) || value > fixed(max))
+    return false;
+
+  /* finally we can cast/convert w/o being out of range */
+  value_r = (unsigned) value;
+  return true;
+}
+
+/* same helper as above with params of type fixed */
+static bool
+ReadCheckedRange(NMEAInputLine &line,fixed &value_r, fixed min, fixed max)
+{
+  fixed value;
+  if (!line.ReadChecked(value))
+    return false;
+
+  /* check range */
+  if (value < min || value > max)
+    return false;
+
+  value_r = value;
+  return true;
+}
+
+/**
  * the parser for the LXWP0 subset sentence that the XC-Tracer can produce
  */
 bool XCTracerDevice::LXWP0(NMEAInputLine &line, NMEAInfo &info, const char *log_string)
@@ -63,7 +106,7 @@ bool XCTracerDevice::LXWP0(NMEAInputLine &line, NMEAInfo &info, const char *log_
    *  2 baroaltitude (m)
    *  3 vario (m/s)
    *  4-8 n.u.
-   *  9 heading of plane
+   *  9 course (0..360)
    * 10 n.u
    * 11 n.u.
    */
@@ -87,9 +130,10 @@ bool XCTracerDevice::LXWP0(NMEAInputLine &line, NMEAInfo &info, const char *log_
 
   line.Skip(5);
 
-  /* read heading */
+  /* read course */
   if (line.ReadChecked(value)) {
-    /* ignore course, we don't have speed over ground */
+    info.track = Angle::Degrees(value);
+    info.track_available.Update(info.clock);
     valid_fields++;
   }
 
@@ -99,7 +143,7 @@ bool XCTracerDevice::LXWP0(NMEAInputLine &line, NMEAInfo &info, const char *log_
     /*
      * Would like to log the invalid input
      * but LogFormat() is not available in TestDriver.cpp
-     * and when its added it "pollutes" the clean output of the tester
+     * and when it's added it "pollutes" the clean output of the tester
      * Please advise ...
      */
     LogFormat("XCTRACER parser - invalid input: %s",log_string);
@@ -125,71 +169,49 @@ bool XCTracerDevice::XCTRC(NMEAInputLine &line, NMEAInfo &info, const char *log_
   int valid_fields = 0;
 
   /**
+   * parse the date
+   * parse and absorb all three values, even if one or more is empty, e.g. ",,13"
+   */
+  unsigned year, month, day;
+  valid_fields += ReadCheckedRange(line,year,1800,2500);
+  valid_fields += ReadCheckedRange(line,month,1,12);
+  valid_fields += ReadCheckedRange(line,day,1,31);
+
+  /**
+   * parse the time
+   * parse and check all four values, even if one or more is empty, e.g. ",,33,"
+   */
+  unsigned hour, minute, second, centisecond;
+  valid_fields += ReadCheckedRange(line,hour,0,23);
+  valid_fields += ReadCheckedRange(line,minute,0,59);
+  valid_fields += ReadCheckedRange(line,second,0,59);
+  valid_fields += ReadCheckedRange(line,centisecond,0,99);
+
+  /**
+   * parse the GPS fix
+   * parse and check both  values, even if one or more is empty, e.g. ",3.1234,"
+   */
+  fixed latitude, longitude;
+  valid_fields += ReadCheckedRange(line,latitude,fixed(-90.0),fixed(90.0));
+  valid_fields += ReadCheckedRange(line,longitude,fixed(-180.0),fixed(180.0));
+
+  /**
    * we only want to accept GPS fixes with completely sane values
    * for date, time and lat/long
    */
-  bool date_valid = false;
-  bool time_valid = false;
+  if (valid_fields == 3+4+2) {
+    /* now convert the date, time, lat & long fields to the internal format */
+    BrokenDate date = BrokenDate(year,month,day);
+    fixed time = fixed(hour*60*60 + minute*60 + second) + fixed(centisecond)/100;
 
-  /* parse the date */
-  long year, month, day;     /* use signed type to catch invalid input */
-  BrokenDate date;
-
-  /* parse and absorb all three values, even if one or more is empty, e.g. ",,13" */
-  bool year_valid = line.ReadChecked(year);
-  bool month_valid = line.ReadChecked(month);
-  bool day_valid = line.ReadChecked(day);
-
-  if (year_valid && month_valid && day_valid) {
-    date = BrokenDate(year,month,day);
-    if (date.IsPlausible()) {
-      date_valid = true;
-      valid_fields += 3;
-    }
-  }
-
-  /* parse time */
-  long hour,minute,second,centisecond; /* use signed type to catch invalid input */
-  fixed time = fixed(0);
-
-  /* parse and check all four values, even if one or more is empty, e.g. ",,33," */
-  bool hour_valid = line.ReadChecked(hour) && hour >= 0 && hour < 24;
-  bool minute_valid = line.ReadChecked(minute) && minute >= 0 && minute < 60;
-  bool second_valid = line.ReadChecked(second) && second >= 0 && second < 60;
-  bool centisecond_valid = line.ReadChecked(centisecond) && centisecond >= 0;
-
-  if (hour_valid && minute_valid && second_valid && centisecond_valid) {
-    time = fixed(hour*60*60 + minute*60 + second);
-    time_valid = true;
-    valid_fields += 4;
-  }
-
-  /* parse the GPS fix */
-  fixed latitude, longitude;
-
-  /* parse and check both  values, even if one or more is empty, e.g. ",3.1234," */
-  bool latitude_valid = line.ReadChecked(latitude) &&
-      latitude >= fixed(-90.0) && latitude <= fixed(90.0);
-  bool longitude_valid = line.ReadChecked(longitude) &&
-      longitude >= fixed(-180.0) && longitude <= fixed(180.0);
-
-  if (latitude_valid && longitude_valid) {
     GeoPoint point;
     point.latitude = Angle::Degrees(latitude);
     point.longitude = Angle::Degrees(longitude);
 
-    valid_fields += 2;
-
     /**
-     * only update GPS and date/time
-     * - if all time/date fields have sane values
-     * - if time has advanced
-     * update only once per second
-     * - for perfomance reasons
-     * - all info time fields have a resolution of one second only anyway
+     * only update GPS and date/time if time has advanced
      */
-
-    if (date_valid && time_valid && (time > last_time || date > last_date)) {
+    if (time > last_time || date > last_date) {
       /* update last date/time */
       last_time = time;
       last_date = date;
@@ -225,7 +247,7 @@ bool XCTracerDevice::XCTRC(NMEAInputLine &line, NMEAInfo &info, const char *log_
 
   /* read course*/
   if (line.ReadChecked(value)) {
-    /* update only update if we're moving .. */
+    /* update only if we're moving .. */
     if (info.MovementDetected()) {
       info.track = Angle::Degrees(value);
       info.track_available.Update(info.clock);
@@ -250,12 +272,10 @@ bool XCTracerDevice::XCTRC(NMEAInputLine &line, NMEAInfo &info, const char *log_
   }
 
   /* read battery level */
-  if (line.ReadChecked(value)) {
-    if ((value >= fixed(0)) && (value <= fixed(100) )) {
-      info.battery_level = value;
-      info.battery_level_available.Update(info.clock);
-      valid_fields++;
-    }
+  if (ReadCheckedRange(line,value,fixed(0),fixed(100))) {
+    info.battery_level = value;
+    info.battery_level_available.Update(info.clock);
+    valid_fields++;
   }
 
   if (valid_fields < 15) {
@@ -264,7 +284,7 @@ bool XCTracerDevice::XCTRC(NMEAInputLine &line, NMEAInfo &info, const char *log_
     /*
      * Would like to log the invalid input
      * but LogFormat() is not available in TestDriver.cpp
-     * and when its added it "pollutes" the clean output of the tester
+     * and when it's added it "pollutes" the clean output of the tester
      * Please advise ...
      */
     LogFormat("XCTRACER parser - invalid input: %s",log_string);
