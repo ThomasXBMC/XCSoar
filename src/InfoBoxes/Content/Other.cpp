@@ -50,8 +50,11 @@ UpdateInfoBoxGLoad(InfoBoxData &data)
   data.SetValue(_T("%2.2f"), CommonInterface::Basic().acceleration.g_load);
 }
 
-void
-UpdateInfoBoxBattery(InfoBoxData &data)
+/*
+ * the "classic" battery info box content
+ */
+static void
+UpdateInfoBoxBatteryClassic(InfoBoxData &data)
 {
 #ifdef HAVE_BATTERY
   bool DisplaySupplyVoltageAsValue=false;
@@ -118,6 +121,124 @@ UpdateInfoBoxBattery(InfoBoxData &data)
   }
 
   data.SetInvalid();
+}
+
+/*
+ * #includes required by the new code
+ * will of course be moved to head of file after review
+ */
+#include "OS/Clock.hpp"
+#include "Components.hpp"
+#include "Blackboard/DeviceBlackboard.hpp"
+
+/*
+ * this infobox displays the system (main) battery
+ * as well as the battery_level of all connected devices
+ * it cycles through the devices every few seconds
+ * the comment of the InfoBox is set to the DeviceName
+ */
+void
+UpdateInfoBoxBattery(InfoBoxData &data)
+{
+  /**
+   * need to keep state between updates
+   * keep it in the two static vars index and last_time
+   * this works also well for multiple instances of
+   * the InfoxBox -- they will all be running in sync
+   */
+
+  /**
+   * index 0           => "classic" InfoBox (main battery)
+   * index 1 .. NUMDEV => InfoBox displays battery level of devices
+   */
+  static unsigned index = 0;
+
+  /**
+   * timestamp of last switch
+   * cycle through main battery and all devices every few seconds
+   */
+  static unsigned last_time = 0;
+
+  /* current time */
+  unsigned current_ms = MonotonicClockMS();
+
+  /**
+   * very first time (or restart after device lost)
+   * set last_time and start with classic InfoBox
+   * */
+  if (!last_time) {
+    last_time = current_ms;
+    index = 0;
+  }
+  /* if time (7s) expired -- go to next device */
+  else if (current_ms - last_time > 7000) {
+    last_time = current_ms;
+
+    /*
+     * cycle through devices and find next one with battery available
+     * InterfaceBlackboard CommonInterface::Basic()
+     * doesn't provide the per_device data
+     * Dev Man says:
+     * "everybody else may use the DeviceBlackboard, but be
+     * sure to lock it while using its data."
+     */
+    device_blackboard->mutex.Lock();
+
+    while (++index <= NUMDEV) {
+      if (device_blackboard->RealState(index-1).battery_level_available)
+        break;
+    }
+    device_blackboard->mutex.Unlock();
+
+    if (index > NUMDEV) {
+      /* back to "classic" */
+      index = 0;
+    }
+  }
+
+  /* index 0 ==> show classic InfoBox */
+  if (index == 0) {
+    data.SetCommentInvalid();   /* clear device name */
+    UpdateInfoBoxBatteryClassic(data);
+    return;
+  }
+
+  /* display device battery level */
+  device_blackboard->mutex.Lock();
+
+  if (!device_blackboard->RealState(index-1).battery_level_available) {
+    /*
+     * we've lost a device ...
+     * set data to invalid and start all over on next update
+     */
+    device_blackboard->mutex.Unlock();
+    data.SetValueInvalid();
+    last_time = 0;  /* force restart */
+    return;
+  }
+
+  /* copy value and unlock asap  */
+  fixed battery = device_blackboard->RealState(index-1).battery_level;
+  device_blackboard->mutex.Unlock();
+
+  /* finally we can display it */
+  data.SetValue(_T("%.0f%%"),battery);
+
+  /*
+   * set comment to driver name
+   * we set it on every update, just in case the user has changed
+   * the config via Device Manager between updates...
+   * get it via  GetSystemSettings()
+   * we're in the main thread - I assume this is save w/o any lock?
+   * assert(InMainThread()) already asserted in GetSystemSettings()
+   */
+  const DeviceConfig &device = CommonInterface::GetSystemSettings().devices[index-1];
+  if (device.UsesDriver())
+    data.SetComment(device.driver_name);
+  else
+    data.SetComment(_T("---")); /* can this really happen ? */
+
+  return;
 }
 
 void
