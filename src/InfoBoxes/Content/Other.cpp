@@ -133,7 +133,7 @@ UpdateInfoBoxBatteryClassic(InfoBoxData &data)
 
 /*
  * this infobox displays the system (main) battery
- * as well as the battery_level of all connected devices
+ * as well as the battery_level or voltage of all connected devices
  * it cycles through the devices every few seconds
  * the comment of the InfoBox is set to the DeviceName
  */
@@ -185,7 +185,8 @@ UpdateInfoBoxBattery(InfoBoxData &data)
     device_blackboard->mutex.Lock();
 
     while (++index <= NUMDEV) {
-      if (device_blackboard->RealState(index-1).battery_level_available)
+      if (device_blackboard->RealState(index-1).battery_level_available ||
+          device_blackboard->RealState(index-1).voltage_available)
         break;
     }
     device_blackboard->mutex.Unlock();
@@ -203,26 +204,35 @@ UpdateInfoBoxBattery(InfoBoxData &data)
     return;
   }
 
-  /* display device battery level */
-  device_blackboard->mutex.Lock();
+  /*
+   * lock mutex, copy battery level and voltage, and unlock mutex asap
+   * */
+  fixed battery = fixed(-1);    /* -1 ==> not available */
+  fixed voltage = fixed(-1);
 
-  if (!device_blackboard->RealState(index-1).battery_level_available) {
+  device_blackboard->mutex.Lock();
+  const NMEAInfo &info = device_blackboard->RealState(index-1);
+  if (info.battery_level_available)
+    battery = info.battery_level;
+  else if (info.voltage_available)
+    voltage = info.voltage;
+  device_blackboard->mutex.Unlock();
+
+  /* finally we can display the values */
+  if (battery != fixed(-1))
+      data.SetValue(_T("%.0f%%"),battery);
+  else if (voltage != fixed(-1))
+    data.SetValue(_T("%2.1fV"),voltage);
+  else {
     /*
      * we've lost a device ...
+     * e.g. communication problem or reconfigured by the user
      * set data to invalid and start all over on next update
      */
-    device_blackboard->mutex.Unlock();
     data.SetValueInvalid();
     last_time = 0;  /* force restart */
     return;
   }
-
-  /* copy value and unlock asap  */
-  fixed battery = device_blackboard->RealState(index-1).battery_level;
-  device_blackboard->mutex.Unlock();
-
-  /* finally we can display it */
-  data.SetValue(_T("%.0f%%"),battery);
 
   /*
    * set comment to driver name
@@ -230,7 +240,7 @@ UpdateInfoBoxBattery(InfoBoxData &data)
    * the config via Device Manager between updates...
    * get it via  GetSystemSettings()
    * we're in the main thread - I assume this is save w/o any lock?
-   * assert(InMainThread()) already asserted in GetSystemSettings()
+   * InMainThread() already asserted in GetSystemSettings()
    */
   const DeviceConfig &device = CommonInterface::GetSystemSettings().devices[index-1];
   if (device.UsesDriver())
