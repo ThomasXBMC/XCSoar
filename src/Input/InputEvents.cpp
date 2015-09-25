@@ -48,6 +48,7 @@ doc/html/advanced/input/ALL		http://xcsoar.sourceforge.net/advanced/input/
 #include "InputConfig.hpp"
 #include "InputParser.hpp"
 #include "UIActions.hpp"
+#include "UIState.hpp"
 #include "Interface.hpp"
 #include "MainWindow.hpp"
 #include "Protection.hpp"
@@ -354,8 +355,22 @@ InputEvents::processGesture(const TCHAR *data)
 {
   // get current mode
   unsigned event_id = gesture_to_event(data);
-  if (event_id)
-  {
+  if (event_id) {
+    /**
+     * Ignore gesture input if screen is locked
+     * However the unlock gesture must be processed always
+     * The id of eventScreenlock is unknown at compile time,
+     * therefore compare the function address.
+     * NOTE: event=Screenlock MUST be the last event in the lock gesture definition
+     * in the .xci file if screenlock triggers  multiple  events, like .e.g.
+     * event=StatusMessage lock...
+     * event=ScreenLock
+     */
+    if (CommonInterface::GetUIState().screen_locked) {
+      const InputConfig::Event &event = input_config.events[event_id];
+      if (event.event != &InputEvents::eventScreenlock)
+        return false;
+    }
     InputEvents::processGo(event_id);
     return true;
   }

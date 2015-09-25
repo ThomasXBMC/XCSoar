@@ -243,6 +243,7 @@ private:
   void DrawFinalGlide(Canvas &canvas, const PixelRect &rc) const;
   void DrawVario(Canvas &canvas, const PixelRect &rc) const;
   void DrawStallRatio(Canvas &canvas, const PixelRect &rc) const;
+  void DrawScreenlock(Canvas &canvas, const PixelRect &rc) const;
 
   void SwitchZoomClimb();
 

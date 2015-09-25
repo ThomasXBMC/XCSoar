@@ -34,6 +34,8 @@ Copyright_License {
 #include "Screen/Canvas.hpp"
 #include "Event/KeyCode.hpp"
 #include "Dialogs/dlgInfoBoxAccess.hpp"
+#include "UIState.hpp"
+#include "Interface.hpp"
 
 #include <algorithm>
 
@@ -434,6 +436,10 @@ InfoBoxWindow::OnKeyDown(unsigned key_code)
 bool
 InfoBoxWindow::OnMouseDown(PixelScalar x, PixelScalar y)
 {
+  /* if screen is locked suppress mouse clicks */
+  if (CommonInterface::GetUIState().screen_locked)
+    return true;
+
   dialog_timer.Cancel();
 
   if (!dragging) {

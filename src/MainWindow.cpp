@@ -596,6 +596,10 @@ MainWindow::OnMouseUp(PixelScalar x, PixelScalar y)
 bool
 MainWindow::OnMouseDouble(PixelScalar x, PixelScalar y)
 {
+  /* if screen is locked no double click in any window */
+  if (CommonInterface::GetUIState().screen_locked)
+    return true;
+
   if (SingleWindow::OnMouseDouble(x, y))
     return true;
 
