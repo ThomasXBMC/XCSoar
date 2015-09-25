@@ -278,7 +278,8 @@ GlueMapWindow::OnMouseUp(PixelScalar x, PixelScalar y)
     break;
   }
 
-  if (arm_mapitem_list) {
+  /* suppress nearest map items if screen is locked */
+  if (arm_mapitem_list && !CommonInterface::GetUIState().screen_locked) {
     map_item_timer.Schedule(200);
     return true;
   }
@@ -313,6 +314,10 @@ GlueMapWindow::OnMouseWheel(PixelScalar x, PixelScalar y, int delta)
 bool
 GlueMapWindow::OnMultiTouchDown()
 {
+  /* ignore multitouch if screen is locked */
+  if (CommonInterface::GetUIState().screen_locked)
+    return false;
+
   if (!visible_projection.IsValid())
     return false;
 
@@ -469,5 +474,6 @@ GlueMapWindow::Render(Canvas &canvas, const PixelRect &rc)
     DrawFinalGlide(canvas, rc);
     DrawVario(canvas, rc);
     DrawGPSStatus(canvas, rc, Basic());
+    DrawScreenlock(canvas, rc);
   }
 }

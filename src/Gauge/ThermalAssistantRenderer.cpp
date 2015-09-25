@@ -31,6 +31,8 @@
 #include "Formatter/UserUnits.hpp"
 #include "Language/Language.hpp"
 #include "Look/ThermalAssistantLook.hpp"
+#include "UIState.hpp"
+#include "Interface.hpp"
 
 #ifdef ENABLE_OPENGL
 #include "Screen/OpenGL/Scope.hpp"
@@ -204,12 +206,28 @@ ThermalAssistantRenderer::UpdateLayout(const PixelRect &rc)
   mid = rc.GetCenter();
 }
 
+/*
+ * Paint screenlock icon, but only if we are not small
+ * If small the other "big" window displays the icon
+ */
+void
+ThermalAssistantRenderer::PaintScreenlock(Canvas &canvas) const
+{
+  if (!small && CommonInterface::GetUIState().screen_locked) {
+    const PixelRect &rc = canvas.GetRect();
+    PixelScalar x = rc.right/2;
+    PixelScalar y = rc.bottom - Layout::FastScale(20);
+    look.screenlock_icon.Draw(canvas, x, y);
+  }
+}
+
 void
 ThermalAssistantRenderer::Paint(Canvas &canvas)
 {
   fixed max_lift = ceil(CalculateMaxLift());
 
   PaintRadarBackground(canvas, max_lift);
+  PaintScreenlock(canvas);
   if (!circling.circling) {
     PaintNotCircling(canvas);
     return;

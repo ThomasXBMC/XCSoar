@@ -27,6 +27,7 @@ void
 UIState::Clear()
 {
   screen_blanked = false;
+  screen_locked = false;
   force_display_mode = DisplayMode::NONE;
   display_mode = DisplayMode::NONE;
   auxiliary_enabled = false;

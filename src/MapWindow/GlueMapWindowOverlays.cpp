@@ -34,6 +34,7 @@ Copyright_License {
 #include "Formatter/UserUnits.hpp"
 #include "Formatter/UserGeoPointFormatter.hpp"
 #include "UIState.hpp"
+#include "Interface.hpp"
 #include "Renderer/FinalGlideBarRenderer.hpp"
 #include "Terrain/RasterTerrain.hpp"
 #include "Util/Macros.hpp"
@@ -445,5 +446,18 @@ GlueMapWindow::DrawStallRatio(Canvas &canvas, const PixelRect &rc) const
 
     canvas.SelectBlackPen();
     canvas.DrawLine(rc.right - 1, rc.bottom - m, rc.right - 11, rc.bottom - m);
+  }
+}
+
+/*
+ * Draw the screen lock icon
+ */
+void
+GlueMapWindow::DrawScreenlock(Canvas &canvas, const PixelRect &rc) const
+{
+  if (CommonInterface::GetUIState().screen_locked) {
+    PixelScalar x = rc.right/2;
+    PixelScalar y = rc.bottom - Layout::FastScale(20);
+    look.screenlock_icon.Draw(canvas, x, y);
   }
 }

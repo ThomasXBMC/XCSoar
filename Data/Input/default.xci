@@ -308,6 +308,16 @@ type=gesture
 data=LDRDL
 event=Status all
 
+# Screenlock 
+# event=Screenlock MUST be the last event in the sequence
+# if multiple events are triggered.
+# Otherwise unlock won't work ...
+mode=default
+type=gesture
+data=RULUR
+event=StatusMessage Screen (un)locked
+event=Screenlock
+
 ###
 
 mode=default

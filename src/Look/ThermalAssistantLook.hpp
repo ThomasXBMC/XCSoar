@@ -28,6 +28,7 @@
 #include "Screen/Pen.hpp"
 #include "Screen/Brush.hpp"
 #include "Screen/Font.hpp"
+#include "Screen/Icon.hpp"
 
 struct ThermalAssistantLook {
   Color background_color;
@@ -43,6 +44,8 @@ struct ThermalAssistantLook {
   Pen outer_circle_pen;
 
   Font circle_label_font, overlay_font;
+
+  MaskedIcon screenlock_icon;
 
   void Initialise(bool small, bool inverse);
 };

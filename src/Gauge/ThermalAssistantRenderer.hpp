@@ -104,6 +104,7 @@ protected:
   void PaintPoints(Canvas &canvas, const LiftPoints &lift_points) const;
   void PaintAdvisor(Canvas &canvas, const LiftPoints &lift_points) const;
   void PaintNotCircling(Canvas &canvas) const;
+  void PaintScreenlock(Canvas &canvas) const;
 };
 
 #endif
