@@ -27,6 +27,8 @@ Copyright_License {
 #include "Screen/Canvas.hpp"
 #include "Blackboard/LiveBlackboard.hpp"
 #include "Input/InputEvents.hpp"
+#include "Interface.hpp"
+#include "UIState.hpp"
 
 #ifdef USE_GDI
 #include "Screen/Canvas.hpp"
@@ -107,7 +109,7 @@ GaugeThermalAssistantWindow::OnMouseUp(PixelScalar x, PixelScalar y)
 
     ReleaseCapture();
 
-    if (was_pressed)
+    if (was_pressed && !CommonInterface::GetUIState().screen_locked)
       InputEvents::eventThermalAssistant(_T(""));
 
     return true;

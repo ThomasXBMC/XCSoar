@@ -680,3 +680,16 @@ InputEvents::eventFileManager(const TCHAR *misc)
 {
   ShowFileManager();
 }
+
+/**
+ * Screenlock event
+ * Toggle the bool state in UIState
+ * and redraw main window to show/hide the lock icon
+ */
+void
+InputEvents::eventScreenlock(const TCHAR *misc)
+{
+  CommonInterface::SetUIState().screen_locked = !CommonInterface::GetUIState().screen_locked;
+  CommonInterface::main_window->FullRedraw();
+}
+

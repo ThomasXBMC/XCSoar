@@ -24,6 +24,7 @@
 #include "ThermalAssistantLook.hpp"
 #include "FontDescription.hpp"
 #include "Screen/Layout.hpp"
+#include "Resources.hpp"
 
 void
 ThermalAssistantLook::Initialise(bool small, bool inverse)
@@ -52,4 +53,6 @@ ThermalAssistantLook::Initialise(bool small, bool inverse)
 
   overlay_font.Load(FontDescription(Layout::FontScale(22)));
   circle_label_font.Load(FontDescription(Layout::FontScale(10)));
+
+  screenlock_icon.LoadResource(IDB_SCREENLOCK, IDB_SCREENLOCK_HD, false);
 }

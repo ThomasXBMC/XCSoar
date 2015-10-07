@@ -39,6 +39,11 @@ struct UIState {
   bool screen_blanked;
 
   /**
+   * Is the screen currently locked ?
+   */
+  bool screen_locked;
+
+  /**
    * The display mode forced by the user.  If not NONE, it overrides
    * the automatic display mode.
    */
