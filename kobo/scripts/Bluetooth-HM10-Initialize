@@ -9,10 +9,11 @@ ATcom() {
 # go through all baud rates and try to reset the HM-10 to factory defaults
 for DEV in /dev/ttymxc0 # /dev/ttymxc1 /dev/ttymxc2
 do
+	stty -F $DEV raw
+	stty -F $DEV cs8 cstopb clocal -crtscts
 	for baud in 9600 19200 38400 57600 115200
 	do
-		stty -F $DEV min 1 time 0
-		stty -F $DEV -ignpar -parenb cs8 cstopb clocal -crtscts -opost
+
 		stty -F $DEV $baud
 		sleep 0.1
 		ATcom RENEW
