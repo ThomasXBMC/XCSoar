@@ -105,7 +105,7 @@ KOBO_KERNEL_DIR = /opt/kobo/kernel
 $(TARGET_OUTPUT_DIR)/KoboRoot.tgz: $(XCSOAR_BIN) \
 	$(KOBO_MENU_BIN) $(KOBO_POWER_OFF_BIN) \
 	$(BITSTREAM_VERA_FILES) \
-	$(topdir)/kobo/inittab $(topdir)/kobo/rcS
+	$(topdir)/kobo/inittab $(topdir)/kobo/rcS $(topdir)/kobo/scripts/Bluetooth-HM10-Initialize
 	@$(NQ)echo "  TAR     $@"
 	$(Q)rm -rf $(@D)/KoboRoot
 	$(Q)install -m 0755 -d $(@D)/KoboRoot/etc $(@D)/KoboRoot/opt/xcsoar/bin $(@D)/KoboRoot/opt/xcsoar/lib/kernel $(@D)/KoboRoot/opt/xcsoar/share/fonts
@@ -115,6 +115,8 @@ $(TARGET_OUTPUT_DIR)/KoboRoot.tgz: $(XCSOAR_BIN) \
 	$(Q)if test -f $(KOBO_KERNEL_DIR)/uImage.otg; then install -m 0644 $(KOBO_KERNEL_DIR)/uImage.otg $(@D)/KoboRoot/opt/xcsoar/lib/kernel; fi
 	$(Q)install -m 0644 $(topdir)/kobo/inittab $(@D)/KoboRoot/etc
 	$(Q)install -m 0644 $(BITSTREAM_VERA_FILES) $(@D)/KoboRoot/opt/xcsoar/share/fonts
+	$(Q)install -m 0755 -d $(@D)/KoboRoot/mnt/onboard/XCSoarData/kobo/scripts
+	$(Q)install -m 0644 $(topdir)/kobo/scripts/Bluetooth-HM10-Initialize $(@D)/KoboRoot/mnt/onboard/XCSoarData/kobo/scripts/
 	$(Q)fakeroot tar czfC $@ $(@D)/KoboRoot .
 
 endif

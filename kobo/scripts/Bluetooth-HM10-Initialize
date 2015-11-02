@@ -1,0 +1,40 @@
+#!/bin/sh
+
+ATcom() {
+	printf "AT+$1" > $DEV
+	sleep 0.5
+}
+
+
+# go through all baud rates and try to reset the HM-10 to factory defaults
+for DEV in /dev/ttymxc0 # /dev/ttymxc1 /dev/ttymxc2
+do
+	for baud in 9600 19200 38400 57600 115200
+	do
+		stty -F $DEV min 1 time 0
+		stty -F $DEV -ignpar -parenb cs8 cstopb clocal -crtscts -opost
+		stty -F $DEV $baud
+		sleep 0.1
+		ATcom RENEW
+		sleep 0.5
+		ATcom RESET
+	done
+done
+
+## now set the required parameters
+# factory default is 9600 baud
+stty -F $DEV 9600
+ATcom BAUD2
+ATcom RESET
+sleep 0.5
+
+# now at the real speed
+stty -F $DEV 38400
+ATcom NAMEKobo-XCSOAR
+ATcom ROLE1
+sleep 0.5
+ATcom IMME0
+
+# ATcom BAUD?
+# ATcom NAME?
+# ATcom ROLE?
