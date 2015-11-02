@@ -116,7 +116,8 @@ $(TARGET_OUTPUT_DIR)/KoboRoot.tgz: $(XCSOAR_BIN) \
 	$(Q)install -m 0644 $(topdir)/kobo/inittab $(@D)/KoboRoot/etc
 	$(Q)install -m 0644 $(BITSTREAM_VERA_FILES) $(@D)/KoboRoot/opt/xcsoar/share/fonts
 	$(Q)install -m 0755 -d $(@D)/KoboRoot/mnt/onboard/XCSoarData/kobo/scripts
-	$(Q)install -m 0644 $(topdir)/kobo/scripts/Bluetooth-HM10-Initialize $(@D)/KoboRoot/mnt/onboard/XCSoarData/kobo/scripts/
+	$(Q)install -m 0755 $(topdir)/kobo/scripts/Bluetooth-HM10-Initialize $(@D)/KoboRoot/mnt/onboard/XCSoarData/kobo/scripts/
+	$(Q)install -m 0755 $(topdir)/kobo/binXXX/PowerOff $(@D)/KoboRoot/opt/xcsoar/bin
 	$(Q)fakeroot tar czfC $@ $(@D)/KoboRoot .
 
 endif
