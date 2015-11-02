@@ -27,6 +27,7 @@ Copyright_License {
 #include "Blackboard/InterfaceBlackboard.hpp"
 #include "Thread/Debug.hpp"
 #include "Compiler.h"
+#include "UIState.hpp"
 
 struct UIState;
 class MainWindow;
@@ -171,6 +172,11 @@ namespace CommonInterface {
     assert(InMainThread());
 
     return Private::ui_state;
+  }
+  
+  // provide access to screenlock for non-UI thread (renderer)
+  static inline bool IsScreenlocked() {
+    return Private::ui_state.screen_locked ;
   }
 
   static inline void ReadBlackboardBasic(const MoreData &nmea_info) {

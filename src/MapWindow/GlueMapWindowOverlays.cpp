@@ -455,7 +455,7 @@ GlueMapWindow::DrawStallRatio(Canvas &canvas, const PixelRect &rc) const
 void
 GlueMapWindow::DrawScreenlock(Canvas &canvas, const PixelRect &rc) const
 {
-  if (CommonInterface::GetUIState().screen_locked) {
+  if (CommonInterface::IsScreenlocked()) {
     PixelScalar x = rc.right/2;
     PixelScalar y = rc.bottom - Layout::FastScale(20);
     look.screenlock_icon.Draw(canvas, x, y);

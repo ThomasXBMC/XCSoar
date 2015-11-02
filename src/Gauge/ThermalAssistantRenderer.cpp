@@ -213,7 +213,7 @@ ThermalAssistantRenderer::UpdateLayout(const PixelRect &rc)
 void
 ThermalAssistantRenderer::PaintScreenlock(Canvas &canvas) const
 {
-  if (!small && CommonInterface::GetUIState().screen_locked) {
+  if (!small && CommonInterface::IsScreenlocked()) {
     const PixelRect &rc = canvas.GetRect();
     PixelScalar x = rc.right/2;
     PixelScalar y = rc.bottom - Layout::FastScale(20);

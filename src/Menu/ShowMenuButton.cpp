@@ -28,6 +28,8 @@ Copyright_License {
 #include "Screen/Layout.hpp"
 #include "Input/InputEvents.hpp"
 #include "Util/Macros.hpp"
+#include "Interface.hpp"
+#include "UIState.hpp"
 
 #ifdef ENABLE_OPENGL
 #include "Screen/OpenGL/Scope.hpp"
@@ -53,7 +55,8 @@ ShowMenuButton::Create(ContainerWindow &parent, const PixelRect &rc,
 bool
 ShowMenuButton::OnClicked()
 {
-  InputEvents::ShowMenu();
+  if (!CommonInterface::GetUIState().screen_locked)
+    InputEvents::ShowMenu();
   return true;
 }
 
