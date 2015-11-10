@@ -1,41 +1,79 @@
 #!/bin/sh
 
+# send AT command to $DEV
 ATcom() {
 	printf "AT+$1" > $DEV
 	sleep 0.5
 }
 
 
-# go through all baud rates and try to reset the HM-10 to factory defaults
-for DEV in /dev/ttymxc0 # /dev/ttymxc1 /dev/ttymxc2
+# go through all ports and baud rates and try to reset the HM-10 to factory defaults
+allports=""
+for DEV in /dev/ttymxc0 /dev/ttymxc1 /dev/ttymxc2
 do
-	stty -F $DEV raw
-	stty -F $DEV cs8 cstopb clocal -crtscts
+	devtty="stty -F $DEV"
+	allports="$allports $DEV"
+	ttysettings=`$devtty -g`
+	$devtty raw
+	$devtty cs8 cstopb clocal -crtscts
 	for baud in 9600 19200 38400 57600 115200
 	do
-
-		stty -F $DEV $baud
+		$devtty $baud min 1 time 0
 		sleep 0.1
 		ATcom RENEW
 		sleep 0.5
 		ATcom RESET
+		sleep 0.5
+		# set read timeout 1s and try to read the name
+		$devtty 9600 min 0 time 10
+		ATcom NAME?
+		name=`grep NAME: $DEV`
+   		if [ $? -eq 0 ]; then
+			module=`echo $name | sed -n 's/OK+NAME://p'`
+			echo "FOUND $module on port $DEV at baudrate $baud"
+      			break
+   		fi
 	done
+	if [ "$module" != "" ]; then
+		break
+	else
+		# restore settings
+		$devtty $ttysettings
+	fi
 done
+
+if [ "$module" == "" ]; then
+	echo "No HM-10 module found on port(s) $allports"
+	exit 1
+fi
 
 ## now set the required parameters
 # factory default is 9600 baud
-stty -F $DEV 9600
+$devtty 9600 min 1 time 0
 ATcom BAUD2
 ATcom RESET
 sleep 0.5
 
 # now at the real speed
-stty -F $DEV 38400
+echo "TRYING to set $module to 38400 baud, ROLE1, IMME0, NAME=Kobo-XCSOAR"
+$devtty 38400 min 0 time 10
+garbage=`cat -u $DEV`
 ATcom NAMEKobo-XCSOAR
 ATcom ROLE1
 sleep 0.5
 ATcom IMME0
-
+expected="OK+Set:Kobo-XCSOAROK+Set:1OK+Set:0"
+response=`cat -u $DEV`
+$devtty min 1 time 0
+if [ "$response" == "$expected" ]; then
+	echo "OK: Setup successful"
+	echo "You should now configure XCSOAR to use port $DEV at $baud baud"
+else
+	echo "Unexpected response from module: $module"
+	echo "Expected: $expected"
+	echo "Response: $response"
+	exit 1
+fi
 # ATcom BAUD?
 # ATcom NAME?
 # ATcom ROLE?
