@@ -1,23 +1,31 @@
 #!/bin/sh
 
+
+allports="/dev/ttymxc0 /dev/ttymxc1 /dev/ttymxc2"
+
+echo "SEARCHING Module HM-10/HM-11 on ports $allports"
+echo "NOTE: Do NOT run a port monitor while this script is running"
+echo "----- The port monitor would cause the script to fail"
+echo "      Due to necessary timeouts the script may run for 30s or so"
+
 # send AT command to $DEV
 ATcom() {
 	printf "AT+$1" > $DEV
 	sleep 0.5
 }
 
-
 # go through all ports and baud rates and try to reset the HM-10 to factory defaults
-allports=""
-for DEV in /dev/ttymxc0 /dev/ttymxc1 /dev/ttymxc2
+testports=""
+for DEV in $allports
 do
 	devtty="stty -F $DEV"
-	allports="$allports $DEV"
+	testports="$testports $DEV"
 	ttysettings=`$devtty -g`
 	$devtty raw
 	$devtty cs8 cstopb clocal -crtscts
 	for baud in 9600 19200 38400 57600 115200
 	do
+                echo "TESTING port $DEV at $baud baud"
 		$devtty $baud min 1 time 0
 		sleep 0.1
 		ATcom RENEW
@@ -25,6 +33,8 @@ do
 		ATcom RESET
 		sleep 0.5
 		# set read timeout 1s and try to read the name
+                $devtty 9600 min 0 time 1
+                garbage=`cat -u $DEV`
 		$devtty 9600 min 0 time 10
 		ATcom NAME?
 		name=`grep NAME: $DEV`
@@ -43,7 +53,7 @@ do
 done
 
 if [ "$module" == "" ]; then
-	echo "No HM-10 module found on port(s) $allports"
+	echo "No HM-10 module found on port(s) $testports"
 	exit 1
 fi
 
@@ -61,19 +71,20 @@ garbage=`cat -u $DEV`
 ATcom NAMEKobo-XCSOAR
 ATcom ROLE1
 sleep 0.5
-ATcom IMME0
-expected="OK+Set:Kobo-XCSOAROK+Set:1OK+Set:0"
+# IMMEx is not necessary -- some FW versions need IMME0, others IMME1
+# but all modules seem to have the correct default value after RENEW
+# ATcom IMME0
+expected="OK+Set:Kobo-XCSOAROK+Set:1"
 response=`cat -u $DEV`
 $devtty min 1 time 0
 if [ "$response" == "$expected" ]; then
 	echo "OK: Setup successful"
-	echo "You should now configure XCSOAR to use port $DEV at $baud baud"
+	echo "    You should now configure XCSOAR to use port $DEV at 38400 baud"
+        echo "    with driver LXNAV or XCTRACER"
 else
 	echo "Unexpected response from module: $module"
 	echo "Expected: $expected"
 	echo "Response: $response"
 	exit 1
 fi
-# ATcom BAUD?
-# ATcom NAME?
-# ATcom ROLE?
+
