@@ -9,5 +9,6 @@
   <target name="compile-jni-classes"
           depends="-set-debug-mode,-compile"/>
 
+  <import file="pg_rules.xml" optional="no" />
   <import file="testing_rules.xml" optional="true" />
 </project>

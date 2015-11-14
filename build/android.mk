@@ -17,7 +17,7 @@ endif
 ANDROID_SDK_PLATFORM_DIR = $(ANDROID_SDK)/platforms/$(ANDROID_SDK_PLATFORM)
 ANDROID_ABI_DIR = $(ANDROID_BUILD)/libs/$(ANDROID_ABI5)
 
-ANDROID_BUILD_TOOLS_DIR = $(ANDROID_SDK)/build-tools/20.0.0
+ANDROID_BUILD_TOOLS_DIR = $(ANDROID_SDK)/build-tools/22.0.1
 ZIPALIGN = $(ANDROID_BUILD_TOOLS_DIR)/zipalign
 
 ANDROID_LIB_NAMES = xcsoar
@@ -187,6 +187,8 @@ endif
 ifeq ($(TESTING),y)
 	$(Q)ln -s ../../../../../../android/src/testing $(@D)/src/org/xcsoar
 	$(Q)ln -s ../../../android/testing/testing_rules.xml $(@D)/
+else
+	$(Q)ln -s ../../../android/pg_rules.xml $(@D)/
 endif
 	@touch $@
 
