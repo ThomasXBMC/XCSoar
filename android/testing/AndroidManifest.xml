@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="org.xcsoar.testing"
+          package="org.xcsoarpg.testing"
           android:installLocation="auto"
           android:versionCode="107"
-          android:versionName="6.8">
+          android:versionName="6.8TR1c">
   <application android:icon="@drawable/icon" android:label="@string/app_name">
     <activity android:name="org.xcsoar.testing.XCSoar"
               android:label="@string/app_name_testing"

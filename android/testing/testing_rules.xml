@@ -5,7 +5,7 @@
     <copy file="${gen.absolute.dir}/org/xcsoarpg/testing/R.java"
           toFile="${gen.absolute.dir}/org/xcsoar/R.java">
       <filterset begintoken="package " endtoken=";">
-        <filter token="org.xcsoar.testing"
+        <filter token="org.xcsoarpg.testing"
                 value="package org.xcsoar;"/>
       </filterset>
     </copy>
