@@ -59,7 +59,7 @@
        style="stop-color:#FFFFFF"
        id="stop67" /><stop
        offset="1"
-       style="stop-color:#143A59"
+       style="stop-color:#ffc800"
        id="stop69" /></linearGradient><linearGradient
      inkscape:collect="always"
      xlink:href="#SVGID_3_"
@@ -79,7 +79,7 @@
        style="stop-color:#ffffff;stop-opacity:0.19607843;"
        id="stop74" /><stop
        offset="1"
-       style="stop-color:#3f74a7;stop-opacity:0.39215687;"
+       style="stop-color:#ffc800;stop-opacity:0.39215687;"
        id="stop76" /></linearGradient><linearGradient
      id="SVGID_4_"
      gradientUnits="userSpaceOnUse"
@@ -92,7 +92,7 @@
        style="stop-color:#FFFFFF"
        id="stop81" /><stop
        offset="1"
-       style="stop-color:#143A59"
+       style="stop-color:#ffc800"
        id="stop83" /></linearGradient><linearGradient
      inkscape:collect="always"
      xlink:href="#SVGID_3_"
@@ -243,7 +243,7 @@
          style="stop-color:#FFFFFF"
          id="stop5008" /><stop
          offset="1"
-         style="stop-color:#143A59"
+         style="stop-color:#ffc800"
          id="stop5010" /></linearGradient><path
        d="m 317.654,207.565 c 0,-20.566 12.674,-38.163 30.634,-45.434 H 55.715 c -24.258,0 -24.258,90.869 0,90.869 h 292.574 c -17.96,-7.271 -30.635,-24.867 -30.635,-45.435 z"
        id="path71"
@@ -258,7 +258,7 @@
          style="stop-color:#ffffff;stop-opacity:0.19607843;"
          id="stop5015" /><stop
          offset="1"
-         style="stop-color:#3f74a7;stop-opacity:0.39215687;"
+         style="stop-color:#ffc800;stop-opacity:0.39215687;"
          id="stop5017" /></linearGradient><path
        style="fill:#ffffff"
        d="m 55.715,165.995 c -8.036,0 -14.331,18.26 -14.331,41.571 0,23.311 6.295,41.571 14.331,41.571 0,0 253.7,0 278.28499,0 C 321.417,239.293 313.79,224.146 313.79,207.566 c 0,-16.579 7.628,-31.726 20.20999,-41.571 -24.58499,0 -278.28499,0 -278.28499,0 z"
@@ -277,7 +277,7 @@
          style="stop-color:#FFFFFF"
          id="stop5023-2" /><stop
          offset="1"
-         style="stop-color:#143A59"
+         style="stop-color:#ffc800"
          id="stop5025-4" /></linearGradient><path
        d="m 435.421,207.565 c 0,-20.566 -12.675,-38.163 -30.635,-45.434 h 292.573 c 24.258,0 24.258,90.869 0,90.869 H 404.785 c 17.96,-7.271 30.636,-24.867 30.636,-45.435 z"
        id="path85"
@@ -431,7 +431,7 @@
        sodipodi:cy="15.934779"
        sodipodi:cx="15.976951"
        id="path5438-9"
-       style="fill:#538abc;fill-opacity:1;fill-rule:nonzero;stroke:none;display:inline"
+       style="fill:#ffc800;fill-opacity:1;fill-rule:nonzero;stroke:none;display:inline"
        sodipodi:type="arc" /><g
        transform="matrix(2.7631337,0,0,2.8215328,-1023.9204,-312.46471)"
        id="g30-9"
